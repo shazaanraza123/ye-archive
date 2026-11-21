@@ -1,0 +1,704 @@
+{
+  "note": "Hand-reviewed canonical Works. An alias (raw era or project string) belongs to exactly one Work. Generic category labels are left unmapped on purpose. Range labels map to range Works, not to the first season in the range. Tracker version labels stay as children rather than flattening into the parent.",
+  "do_not_map": [
+    "Merch",
+    "Tops",
+    "Sweaters",
+    "Bottoms",
+    "Accessories",
+    "Outerwear",
+    "Footwear",
+    "Collectibles",
+    "All Yeezy (2013-2026)",
+    "All Eras (2005-2026)",
+    "All Vintage & Other Designers",
+    "Multi-Era",
+    "Ongoing",
+    "Unknown",
+    "$undefined",
+    "Donda, Vultures & Bully Archives 2021-2026",
+    "Miscellaneous Album Merch (2008-2015)",
+    "Album merch 2008–2015",
+    "Album merch",
+    "Archives 2026",
+    "Featured Grails",
+    "Yeezy Collaborations Archive (2013-2025)",
+    "Ye & Kids See Ghosts Archives (2018)",
+    "Pierre-Louis Auvray",
+    "Opt Archive",
+    "Twitter",
+    "x"
+  ],
+  "works": [
+    {
+      "slug": "yeezy-season",
+      "name": "Yeezy Season",
+      "years": ["2015", "2022"],
+      "kind": "season",
+      "aliases": ["Yeezy Season"]
+    },
+    {
+      "slug": "season-1",
+      "name": "Season 1",
+      "years": ["2015", "2015"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Season 1", "Yeezy Season 1 Archive"],
+      "title_includes": ["Yeezy Season 1"]
+    },
+    {
+      "slug": "season-2",
+      "name": "Season 2",
+      "years": ["2015", "2016"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Season 2", "Yeezy Season 2 Archive"],
+      "title_includes": ["Yeezy Season 2"]
+    },
+    {
+      "slug": "season-3",
+      "name": "Season 3",
+      "years": ["2016", "2016"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": [],
+      "title_includes": ["Yeezy Season 3"]
+    },
+    {
+      "slug": "seasons-1-2",
+      "name": "Seasons 1–2",
+      "years": ["2015", "2016"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Seasons 1–2 (2015–2016)"]
+    },
+    {
+      "slug": "seasons-1-3",
+      "name": "Seasons 1–3",
+      "years": ["2015", "2016"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Yeezy Season 1-3 (2015-2016)"]
+    },
+    {
+      "slug": "season-4",
+      "name": "Season 4",
+      "years": ["2016", "2017"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Season 4", "Yeezy Season 4 Archive"],
+      "title_includes": ["Yeezy Season 4"]
+    },
+    {
+      "slug": "season-5",
+      "name": "Season 5",
+      "years": ["2017", "2017"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Season 5", "Yeezy Season 5 Archive"],
+      "title_includes": ["Yeezy Season 5"]
+    },
+    {
+      "slug": "seasons-4-5",
+      "name": "Seasons 4–5",
+      "years": ["2016", "2017"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Yeezy Season 4-5 (2016-2017)"]
+    },
+    {
+      "slug": "season-6",
+      "name": "Season 6",
+      "years": ["2017", "2018"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Season 6", "Yeezy Season 6 Archive"],
+      "title_includes": ["Yeezy Season 6"]
+    },
+    {
+      "slug": "season-7",
+      "name": "Season 7",
+      "years": ["2018", "2018"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": [],
+      "title_includes": ["Yeezy Season 7"]
+    },
+    {
+      "slug": "seasons-3-6",
+      "name": "Seasons 3–6",
+      "years": ["2016", "2019"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Seasons 3–6 (2016–2019)"]
+    },
+    {
+      "slug": "seasons-6-7",
+      "name": "Seasons 6–7",
+      "years": ["2017", "2018"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Yeezy Season 6-7 (2017-2018)"]
+    },
+    {
+      "slug": "season-8",
+      "name": "Season 8",
+      "years": ["2019", "2020"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Season 8", "Yeezy Season 8 Archive"],
+      "title_includes": ["Yeezy Season 8"]
+    },
+    {
+      "slug": "season-9",
+      "name": "Season 9",
+      "years": ["2021", "2022"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Season 9", "Yeezy Season 9 Archive"],
+      "title_includes": ["Yeezy Season 9"]
+    },
+    {
+      "slug": "seasons-8-9",
+      "name": "Seasons 8–9",
+      "years": ["2020", "2022"],
+      "kind": "season",
+      "parent": "yeezy-season",
+      "aliases": ["Yeezy Season 8-9 (2020-2022)"]
+    },
+    {
+      "slug": "season-x",
+      "name": "Season X",
+      "years": ["2024", "2026"],
+      "kind": "season",
+      "aliases": ["Season X", "SZN X", "Yeezy Season X Archive"],
+      "title_includes": ["Yeezy Season X"]
+    },
+    {
+      "slug": "yzy-free",
+      "name": "YZY Free",
+      "years": ["2022", "2023"],
+      "kind": "season",
+      "aliases": ["YZY Free / Post-Season 9", "Yeezy YZY Free / Post-Season 9 Archive"]
+    },
+    {
+      "slug": "yzy-gap",
+      "name": "YZY GAP",
+      "years": ["2020", "2022"],
+      "kind": "collab",
+      "aliases": ["YZY GAP", "Yeezy YZY GAP Archive"],
+      "title_includes": ["Yeezy Gap"]
+    },
+    {
+      "slug": "yzy-gap-balenciaga",
+      "name": "YZY GAP Engineered by Balenciaga",
+      "years": ["2021", "2022"],
+      "kind": "collab",
+      "aliases": [
+        "YZY GAP Engineered by Balenciaga",
+        "Yeezy Gap Engineered By Balenciaga (2021-2022)",
+        "Yeezy YZY GAP Engineered by Balenciaga Archive"
+      ],
+      "title_includes": ["Yeezy Gap Balenciaga", "Yeezy Gap Engineered"]
+    },
+    {
+      "slug": "adidas-yeezy",
+      "name": "Adidas Yeezy",
+      "years": ["2015", "2022"],
+      "kind": "collab",
+      "aliases": ["Adidas Yeezy", "Adidas Yeezy (2019–2022)"]
+    },
+    {
+      "slug": "calabasas",
+      "name": "Yeezy Calabasas",
+      "years": ["2017", "2017"],
+      "kind": "collab",
+      "aliases": ["Yeezy Calabasas Capsule (2017)"],
+      "title_includes": ["Calabasas"]
+    },
+    {
+      "slug": "apc",
+      "name": "Yeezy × A.P.C.",
+      "years": ["2014", "2014"],
+      "kind": "collab",
+      "aliases": [],
+      "title_includes": ["APC ", "A.P.C."]
+    },
+    {
+      "slug": "free-hoover",
+      "name": "Free Hoover Concert",
+      "years": ["2021", "2021"],
+      "kind": "other",
+      "aliases": ["Free Hoover Concert", "Yeezy Free Hoover Concert Archive"],
+      "title_includes": ["Free Hoover"]
+    },
+    {
+      "slug": "ye-tour-2021",
+      "name": "Ye Tour 2021",
+      "years": ["2021", "2021"],
+      "kind": "tour",
+      "aliases": ["Ye Tour 2021"]
+    },
+    {
+      "slug": "ye-tour-2023",
+      "name": "Ye Tour 2023",
+      "years": ["2023", "2023"],
+      "kind": "tour",
+      "aliases": ["Ye Tour 2023"]
+    },
+    {
+      "slug": "ye-tour-2024",
+      "name": "Ye Tour 2024",
+      "years": ["2024", "2024"],
+      "kind": "tour",
+      "aliases": ["Ye Tour 2024"]
+    },
+    {
+      "slug": "ye-tour-2025",
+      "name": "Ye Tour 2025",
+      "years": ["2025", "2025"],
+      "kind": "tour",
+      "aliases": ["Ye Tour 2025"]
+    },
+    {
+      "slug": "ye-tour-2026",
+      "name": "Ye Tour 2026",
+      "years": ["2026", "2026"],
+      "kind": "tour",
+      "aliases": ["Ye Tour 2026", "2026 Tour", "SZN X / 2026 Tour"]
+    },
+    {
+      "slug": "before-the-college-dropout",
+      "name": "Before The College Dropout",
+      "years": ["1996", "2003"],
+      "kind": "album",
+      "aliases": ["Before The College Dropout"]
+    },
+    {
+      "slug": "the-college-dropout",
+      "name": "The College Dropout",
+      "years": ["2004", "2004"],
+      "kind": "album",
+      "aliases": ["The College Dropout"],
+      "title_includes": ["The College Dropout", "College Dropout"]
+    },
+    {
+      "slug": "late-registration",
+      "name": "Late Registration",
+      "years": ["2005", "2005"],
+      "kind": "album",
+      "aliases": ["Late Registration"],
+      "title_includes": ["Late Registration"]
+    },
+    {
+      "slug": "graduation",
+      "name": "Graduation",
+      "years": ["2007", "2007"],
+      "kind": "album",
+      "aliases": ["Graduation"],
+      "title_includes": ["Graduation"]
+    },
+    {
+      "slug": "dropout-trilogy",
+      "name": "Dropout Trilogy",
+      "years": ["2004", "2007"],
+      "kind": "other",
+      "aliases": ["Dropout Trilogy Archive (2004-2007)"]
+    },
+    {
+      "slug": "808s-heartbreak",
+      "name": "808s & Heartbreak",
+      "years": ["2008", "2008"],
+      "kind": "album",
+      "aliases": ["808s & Heartbreak"],
+      "title_includes": ["808s & Heartbreak", "808’s & Heartbreak", "808s And Heartbreak"]
+    },
+    {
+      "slug": "glow-in-the-dark",
+      "name": "Glow in the Dark",
+      "years": ["2008", "2008"],
+      "kind": "tour",
+      "parent": "808s-heartbreak",
+      "aliases": [],
+      "title_includes": ["Glow In The Dark", "Glow in the Dark"]
+    },
+    {
+      "slug": "my-beautiful-dark-twisted-fantasy",
+      "name": "My Beautiful Dark Twisted Fantasy",
+      "years": ["2010", "2010"],
+      "kind": "album",
+      "aliases": ["My Beautiful Dark Twisted Fantasy"],
+      "title_includes": ["My Beautiful Dark Twisted Fantasy", "MBDTF"]
+    },
+    {
+      "slug": "watch-the-throne",
+      "name": "Watch The Throne",
+      "years": ["2011", "2011"],
+      "kind": "album",
+      "aliases": ["Watch The Throne"],
+      "title_includes": ["Watch The Throne"]
+    },
+    {
+      "slug": "cruel-summer",
+      "name": "Cruel Summer",
+      "years": ["2012", "2012"],
+      "kind": "album",
+      "aliases": ["Cruel Summer"]
+    },
+    {
+      "slug": "yeezus",
+      "name": "Yeezus",
+      "years": ["2013", "2013"],
+      "kind": "album",
+      "aliases": ["Yeezus", "Yeezus Archive (2013-2015)"],
+      "title_includes": ["Yeezus"]
+    },
+    {
+      "slug": "yeezus-2",
+      "name": "Yeezus 2",
+      "years": ["2014", "2014"],
+      "kind": "album",
+      "parent": "yeezus",
+      "aliases": ["Yeezus 2"],
+      "title_includes": ["Yeezus 2"]
+    },
+    {
+      "slug": "so-help-me-god",
+      "name": "So Help Me God",
+      "years": ["2014", "2015"],
+      "kind": "album",
+      "aliases": ["So Help Me God"]
+    },
+    {
+      "slug": "swish",
+      "name": "SWISH",
+      "years": ["2015", "2016"],
+      "kind": "album",
+      "aliases": ["SWISH"]
+    },
+    {
+      "slug": "the-life-of-pablo",
+      "name": "The Life Of Pablo",
+      "years": ["2016", "2016"],
+      "kind": "album",
+      "aliases": [
+        "The Life Of Pablo",
+        "The Life of Pablo",
+        "The Life Of Pablo Archive (2016)"
+      ],
+      "title_includes": ["The Life Of Pablo", "The Life of Pablo"]
+    },
+    {
+      "slug": "saint-pablo",
+      "name": "Saint Pablo Tour",
+      "years": ["2016", "2016"],
+      "kind": "tour",
+      "parent": "the-life-of-pablo",
+      "aliases": [],
+      "title_includes": ["Saint Pablo"]
+    },
+    {
+      "slug": "turbo-grafx-16",
+      "name": "Turbo Grafx 16",
+      "years": ["2016", "2016"],
+      "kind": "album",
+      "aliases": ["Turbo Grafx 16"]
+    },
+    {
+      "slug": "cruel-winter-v1",
+      "name": "Cruel Winter [V1]",
+      "years": ["2012", "2013"],
+      "kind": "album",
+      "aliases": ["Cruel Winter [V1]"]
+    },
+    {
+      "slug": "cruel-winter-v2",
+      "name": "Cruel Winter [V2]",
+      "years": ["2016", "2017"],
+      "kind": "album",
+      "aliases": ["Cruel Winter [V2]"]
+    },
+    {
+      "slug": "ye",
+      "name": "ye",
+      "years": ["2018", "2018"],
+      "kind": "album",
+      "aliases": ["ye"]
+    },
+    {
+      "slug": "kids-see-ghosts",
+      "name": "KIDS SEE GHOSTS",
+      "years": ["2018", "2018"],
+      "kind": "album",
+      "aliases": ["KIDS SEE GHOSTS"],
+      "title_includes": ["Kids See Ghosts", "Kids See Ghost"]
+    },
+    {
+      "slug": "ktse",
+      "name": "K.T.S.E.",
+      "years": ["2018", "2018"],
+      "kind": "album",
+      "aliases": ["K.T.S.E."]
+    },
+    {
+      "slug": "nasir",
+      "name": "NASIR",
+      "years": ["2018", "2018"],
+      "kind": "album",
+      "aliases": ["NASIR"]
+    },
+    {
+      "slug": "daytona",
+      "name": "DAYTONA",
+      "years": ["2018", "2018"],
+      "kind": "album",
+      "aliases": ["DAYTONA"]
+    },
+    {
+      "slug": "jesus-is-king",
+      "name": "Jesus Is King",
+      "years": ["2019", "2019"],
+      "kind": "album",
+      "aliases": [
+        "JESUS IS KING",
+        "Jesus Is King",
+        "Jesus Is King Archive (2019-2021)"
+      ],
+      "title_includes": ["Jesus Is King", "Jesus is King"]
+    },
+    {
+      "slug": "jesus-is-king-dre",
+      "name": "Jesus Is King: The Dr. Dre Version",
+      "years": ["2019", "2020"],
+      "kind": "album",
+      "parent": "jesus-is-king",
+      "aliases": ["JESUS IS KING: The Dr. Dre Version"]
+    },
+    {
+      "slug": "jesus-is-born",
+      "name": "Jesus Is Born",
+      "years": ["2019", "2019"],
+      "kind": "album",
+      "aliases": ["Jesus Is Born"]
+    },
+    {
+      "slug": "jesus-is-lord",
+      "name": "JESUS IS LORD",
+      "years": ["2020", "2020"],
+      "kind": "album",
+      "aliases": ["JESUS IS LORD"]
+    },
+    {
+      "slug": "sunday-service",
+      "name": "Sunday Service",
+      "years": ["2019", "2020"],
+      "kind": "other",
+      "aliases": [],
+      "title_includes": ["Sunday Service"]
+    },
+    {
+      "slug": "yandhi-v1",
+      "name": "Yandhi [V1]",
+      "years": ["2018", "2018"],
+      "kind": "album",
+      "aliases": ["Yandhi [V1]"]
+    },
+    {
+      "slug": "yandhi-v2",
+      "name": "Yandhi [V2]",
+      "years": ["2018", "2019"],
+      "kind": "album",
+      "aliases": ["Yandhi [V2]"]
+    },
+    {
+      "slug": "good-ass-job",
+      "name": "Good Ass Job",
+      "years": ["2009", "2010"],
+      "kind": "album",
+      "aliases": ["Good Ass Job"]
+    },
+    {
+      "slug": "good-ass-job-2018",
+      "name": "Good Ass Job (2018)",
+      "years": ["2018", "2018"],
+      "kind": "album",
+      "aliases": ["Good Ass Job (2018)"]
+    },
+    {
+      "slug": "gods-country",
+      "name": "God's Country",
+      "years": ["2019", "2020"],
+      "kind": "album",
+      "aliases": ["God's Country"],
+      "title_includes": ["God's Country", "God’s Country"]
+    },
+    {
+      "slug": "donda",
+      "name": "Donda",
+      "years": ["2021", "2021"],
+      "kind": "album",
+      "aliases": ["Donda", "DONDA"],
+      "title_includes": ["Donda"]
+    },
+    {
+      "slug": "donda-v1",
+      "name": "DONDA [V1]",
+      "years": ["2020", "2020"],
+      "kind": "album",
+      "parent": "donda",
+      "aliases": ["DONDA [V1]", "Donda [V1]"]
+    },
+    {
+      "slug": "donda-v2",
+      "name": "Donda [V2]",
+      "years": ["2021", "2021"],
+      "kind": "album",
+      "parent": "donda",
+      "aliases": ["Donda [V2]"]
+    },
+    {
+      "slug": "donda-v3",
+      "name": "Donda [V3]",
+      "years": ["2021", "2021"],
+      "kind": "album",
+      "parent": "donda",
+      "aliases": ["Donda [V3]"]
+    },
+    {
+      "slug": "donda-2",
+      "name": "Donda 2",
+      "years": ["2022", "2022"],
+      "kind": "album",
+      "aliases": ["DONDA 2"],
+      "title_includes": ["Donda 2", "DONDA 2"]
+    },
+    {
+      "slug": "donda-2-v1",
+      "name": "DONDA 2 [V1]",
+      "years": ["2022", "2022"],
+      "kind": "album",
+      "parent": "donda-2",
+      "aliases": ["DONDA 2 [V1]"]
+    },
+    {
+      "slug": "donda-2-v2",
+      "name": "DONDA 2 [V2]",
+      "years": ["2024", "2025"],
+      "kind": "album",
+      "parent": "donda-2",
+      "aliases": ["DONDA 2 [V2]"]
+    },
+    {
+      "slug": "vultures",
+      "name": "Vultures",
+      "years": ["2024", "2024"],
+      "kind": "album",
+      "aliases": ["Vultures", "Yeezy Vultures Archive"],
+      "title_includes": ["Vultures"]
+    },
+    {
+      "slug": "vultures-1",
+      "name": "VULTURES 1",
+      "years": ["2024", "2024"],
+      "kind": "album",
+      "parent": "vultures",
+      "aliases": ["VULTURES 1"]
+    },
+    {
+      "slug": "vultures-2",
+      "name": "VULTURES 2",
+      "years": ["2024", "2024"],
+      "kind": "album",
+      "parent": "vultures",
+      "aliases": ["VULTURES 2"]
+    },
+    {
+      "slug": "vultures-3",
+      "name": "VULTURES 3",
+      "years": ["2025", "2025"],
+      "kind": "album",
+      "parent": "vultures",
+      "aliases": ["VULTURES 3"]
+    },
+    {
+      "slug": "ys",
+      "name": "¥$",
+      "years": ["2023", "2025"],
+      "kind": "album",
+      "aliases": ["¥$"]
+    },
+    {
+      "slug": "bully",
+      "name": "Bully",
+      "years": ["2024", "2026"],
+      "kind": "album",
+      "aliases": ["Bully", "Yeezy Bully Archive"],
+      "title_includes": ["Bully"]
+    },
+    {
+      "slug": "bully-v1",
+      "name": "BULLY [V1]",
+      "years": ["2024", "2025"],
+      "kind": "album",
+      "parent": "bully",
+      "aliases": ["BULLY [V1]"]
+    },
+    {
+      "slug": "bully-v2",
+      "name": "BULLY [V2]",
+      "years": ["2025", "2026"],
+      "kind": "album",
+      "parent": "bully",
+      "aliases": ["BULLY [V2]"]
+    },
+    {
+      "slug": "cuck",
+      "name": "CUCK",
+      "years": ["2025", "2026"],
+      "kind": "album",
+      "aliases": ["CUCK"]
+    },
+    {
+      "slug": "in-a-perfect-world",
+      "name": "IN A PERFECT WORLD",
+      "years": ["2025", "2026"],
+      "kind": "album",
+      "aliases": ["IN A PERFECT WORLD"]
+    },
+    {
+      "slug": "yebu",
+      "name": "YEBU",
+      "years": ["2023", "2025"],
+      "kind": "album",
+      "aliases": ["YEBU"]
+    },
+    {
+      "slug": "war",
+      "name": "WAR",
+      "years": ["2022", "2025"],
+      "kind": "album",
+      "aliases": ["WAR"]
+    },
+    {
+      "slug": "hitler",
+      "name": "Hitler",
+      "years": ["2016", "2018"],
+      "kind": "album",
+      "aliases": ["Hitler"]
+    },
+    {
+      "slug": "carti-ye",
+      "name": "CARTI YE",
+      "years": ["2023", "2025"],
+      "kind": "album",
+      "aliases": ["CARTI YE"]
+    },
+    {
+      "slug": "never-stop",
+      "name": "NEVER STOP",
+      "years": ["2024", "2025"],
+      "kind": "album",
+      "aliases": ["NEVER STOP"]
+    }
+  ]
+}
