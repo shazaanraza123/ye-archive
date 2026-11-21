@@ -20,3 +20,7 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Image derivatives (masters stay in public/archive/)
+public/t/**/*.webp
+data/image-derivatives.json

@@ -1,0 +1,40 @@
+# Unmapped era / project strings
+# Image records with work_slug: 5577 / 5847 (95.4%)
+# Sorted by image count, then total. Category labels in do_not_map are listed here but were not assigned.
+# field	images	total	value
+project	1008	1048	Merch
+project	142	150	Tops
+project	122	127	Sweaters
+project	117	122	Accessories
+project	81	83	Bottoms
+project	74	74	Outerwear
+project	57	57	Collectibles
+era	46	50	Donda, Vultures & Bully Archives 2021-2026
+project	44	44	All Yeezy (2013-2026)
+project	40	41	Miscellaneous Album Merch (2008-2015)
+project	37	40	Donda, Vultures & Bully Archives 2021-2026
+project	29	29	All Vintage & Other Designers
+project	24	24	Footwear
+project	17	17	All Eras (2005-2026)
+era	8	8	$undefined
+project	8	8	$undefined
+era	3	42	Ongoing
+project	3	42	Ongoing
+project	3	3	Album merch
+era	3	3	Album merch 2008–2015
+project	3	3	Archives 2026
+project	3	3	Ye & Kids See Ghosts Archives (2018)
+project	2	2	Featured Grails
+project	2	2	Yeezy Collaborations Archive (2013-2025)
+era	0	41	Multi-Era
+project	0	41	Multi-Era
+era	0	4	Unknown
+project	0	4	Unknown
+era	0	2	Pierre-Louis Auvray
+project	0	2	Pierre-Louis Auvray
+era	0	1	Opt Archive
+project	0	1	Opt Archive
+era	0	1	Twitter
+project	0	1	Twitter
+era	0	1	x
+project	0	1	x

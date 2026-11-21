@@ -1,5 +1,7 @@
 import curatedJson from "../data/curated.json";
 
+export { imgUrl, type ImgSize } from "./img";
+
 export type SearchHit = {
   id: string;
   title: string;
@@ -19,6 +21,7 @@ export type SearchHit = {
   img: string | null;
   desc?: string;
   confidence: "high" | "medium" | "low";
+  work_slug?: string | null;
 };
 
 export type PackedRecord = {
@@ -47,6 +50,7 @@ export type PackedRecord = {
     source_url: string;
   }[];
   confidence: string;
+  work_slug?: string | null;
   images: {
     local_path: string | null;
     original_url: string;
@@ -56,6 +60,9 @@ export type PackedRecord = {
     caption: string | null;
     role: string;
     editorial_role?: string;
+    hash?: string | null;
+    fit?: "contain" | "cover";
+    bg?: string;
   }[];
 };
 
@@ -237,12 +244,15 @@ export type DomainIndex = {
 export type WorkIndex = {
   slug: string;
   label: string;
+  name?: string;
   count: number;
   domains: Record<string, number>;
   years: Record<string, number>;
   project?: string[];
   era?: string[];
   titleIncludes?: string[];
+  kind?: "album" | "season" | "tour" | "collab" | "film" | "other";
+  parent?: string;
 };
 export type PersonIndex = {
   slug: string;
@@ -266,6 +276,7 @@ export function slugify(input: string): string {
 }
 
 export function hitMatchesWork(hit: SearchHit, work: WorkIndex): boolean {
+  if (hit.work_slug && hit.work_slug === work.slug) return true;
   if (work.project?.includes(hit.project ?? "")) return true;
   if (work.era?.includes(hit.era ?? "")) return true;
   if (work.titleIncludes?.some((t) => hit.title.includes(t))) return true;

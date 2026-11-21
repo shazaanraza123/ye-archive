@@ -1,10 +1,12 @@
 /**
- * Quality-derived indexes, people normalization, search index, record shards.
+ * Quality-derived indexes, people normalization, search index, record shards,
+ * canonical work_slug, and slim public/idx files.
  * Does not modify data/archive.json or public/archive/.
  */
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
 import type { ArchiveRecord } from "../scrapers/types.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -12,6 +14,40 @@ const records = JSON.parse(
   readFileSync(join(root, "data/archive.json"), "utf8"),
 ) as ArchiveRecord[];
 const idSet = new Set(records.map((r) => r.id));
+
+type WorkKind = "album" | "season" | "tour" | "collab" | "film" | "other";
+type WorkDef = {
+  slug: string;
+  name: string;
+  years: [string, string];
+  kind: WorkKind;
+  parent?: string;
+  aliases: string[];
+  title_includes?: string[];
+  cover_ids?: string[];
+};
+
+type AliasFile = {
+  note?: string;
+  do_not_map?: string[];
+  works: WorkDef[];
+};
+
+type DerivRow = { hash: string; fit: "contain" | "cover"; bg: string };
+type DerivFile = { images?: Record<string, DerivRow> };
+
+const aliasFile = JSON.parse(
+  readFileSync(join(root, "data/works.aliases.json"), "utf8"),
+) as AliasFile;
+
+const derivFile: DerivFile = (() => {
+  try {
+    return JSON.parse(readFileSync(join(root, "data/image-derivatives.json"), "utf8"));
+  } catch {
+    return {};
+  }
+})();
+const derivByHash = derivFile.images ?? {};
 
 function publicUrl(local: string | null | undefined): string | null {
   if (!local) return null;
@@ -37,6 +73,15 @@ function yearOf(r: ArchiveRecord): string | null {
   return m ? m[0] : null;
 }
 
+function decadeOf(year: string | null): string {
+  if (!year || !/^\d{4}$/.test(year)) return "undated";
+  return `${year.slice(0, 3)}0s`;
+}
+
+function mediumOf(domain: string): string {
+  return domain.toLowerCase();
+}
+
 type RoleHint = { record_id: string; original_url: string; editorial_role: string; rank: number };
 const roleFile = (() => {
   try {
@@ -56,8 +101,13 @@ function roleFor(recordId: string, originalUrl: string): RoleHint | undefined {
   return roleMap.get(`${recordId}|${originalUrl}`);
 }
 
-function rankedLocals(r: ArchiveRecord) {
-  return (r.images ?? [])
+type ImageRow = ArchiveRecord["images"][number] & {
+  sha256?: string | null;
+  phash?: string | null;
+};
+
+function rankedLocals(r: ArchiveRecord): ImageRow[] {
+  return ((r.images ?? []) as ImageRow[])
     .filter((i) => i.local_path)
     .slice()
     .sort((a, b) => {
@@ -68,8 +118,16 @@ function rankedLocals(r: ArchiveRecord) {
     });
 }
 
+function firstLocal(r: ArchiveRecord): ImageRow | null {
+  return rankedLocals(r)[0] ?? null;
+}
+
 function firstImg(r: ArchiveRecord): string | null {
-  return publicUrl(rankedLocals(r)[0]?.local_path ?? null);
+  return publicUrl(firstLocal(r)?.local_path ?? null);
+}
+
+function hasImage(r: ArchiveRecord): boolean {
+  return Boolean(firstLocal(r));
 }
 
 const SENTENCE = /cover art for|featuring kanye|posted by|designed by the/i;
@@ -100,6 +158,135 @@ function shardKey(id: string): string {
   const hex = id.includes("-") ? id.slice(id.lastIndexOf("-") + 1) : id;
   return hex.slice(0, 2).toLowerCase().replace(/[^0-9a-f]/g, "0").padEnd(2, "0");
 }
+
+/* -------------------------------------------------------------------------- */
+/* Canonical Works                                                             */
+/* -------------------------------------------------------------------------- */
+
+const worksBySlug = new Map<string, WorkDef>();
+const aliasToSlug = new Map<string, string>();
+const titleNeedles: { needle: string; slug: string }[] = [];
+
+for (const work of aliasFile.works) {
+  if (worksBySlug.has(work.slug)) {
+    throw new Error(`Duplicate work slug: ${work.slug}`);
+  }
+  worksBySlug.set(work.slug, work);
+  for (const alias of work.aliases ?? []) {
+    if (!alias) continue;
+    const existing = aliasToSlug.get(alias);
+    if (existing && existing !== work.slug) {
+      throw new Error(`Duplicate alias ${JSON.stringify(alias)}: ${existing} and ${work.slug}`);
+    }
+    aliasToSlug.set(alias, work.slug);
+  }
+  for (const needle of work.title_includes ?? []) {
+    if (!needle) continue;
+    titleNeedles.push({ needle: needle.toLowerCase(), slug: work.slug });
+  }
+}
+
+titleNeedles.sort((a, b) => b.needle.length - a.needle.length);
+
+for (const work of aliasFile.works) {
+  if (work.parent && !worksBySlug.has(work.parent)) {
+    throw new Error(`Work ${work.slug} parent ${work.parent} is not defined`);
+  }
+}
+
+function ancestors(slug: string): Set<string> {
+  const out = new Set<string>();
+  let cur = worksBySlug.get(slug);
+  const seen = new Set<string>();
+  while (cur?.parent && !seen.has(cur.slug)) {
+    seen.add(cur.slug);
+    out.add(cur.parent);
+    cur = worksBySlug.get(cur.parent);
+  }
+  return out;
+}
+
+function titleSlug(title: string | null | undefined): string | null {
+  if (!title) return null;
+  const t = title.toLowerCase();
+  for (const n of titleNeedles) {
+    if (t.includes(n.needle)) return n.slug;
+  }
+  return null;
+}
+
+function resolveWork(r: ArchiveRecord): string | null {
+  type Cand = { slug: string; prio: number };
+  const cands: Cand[] = [];
+  if (r.project) {
+    const s = aliasToSlug.get(r.project);
+    if (s) cands.push({ slug: s, prio: 0 });
+  }
+  if (r.era) {
+    const s = aliasToSlug.get(r.era);
+    if (s) cands.push({ slug: s, prio: 1 });
+  }
+  const fromTitle = titleSlug(r.title);
+  if (fromTitle) cands.push({ slug: fromTitle, prio: 2 });
+  if (!cands.length) return null;
+
+  const slugs = [...new Set(cands.map((c) => c.slug))];
+  const keep = new Set(
+    slugs.filter((s) => !slugs.some((other) => other !== s && ancestors(other).has(s))),
+  );
+  const remaining = cands.filter((c) => keep.has(c.slug));
+  remaining.sort((a, b) => a.prio - b.prio || ancestors(b.slug).size - ancestors(a.slug).size);
+  return remaining[0]?.slug ?? null;
+}
+
+const workSlugById = new Map<string, string | null>();
+for (const r of records) {
+  workSlugById.set(r.id, resolveWork(r));
+}
+
+/* Unmapped era/project strings (largest first: image count, then total). */
+type UnmappedRow = { value: string; field: "era" | "project"; total: number; images: number };
+const unmappedMap = new Map<string, UnmappedRow>();
+function bumpUnmapped(field: "era" | "project", value: string | null, imaged: boolean) {
+  if (!value) return;
+  if (aliasToSlug.has(value)) return;
+  const key = `${field}\t${value}`;
+  const row = unmappedMap.get(key) ?? { value, field, total: 0, images: 0 };
+  row.total += 1;
+  if (imaged) row.images += 1;
+  unmappedMap.set(key, row);
+}
+
+let imageTotal = 0;
+let imageMapped = 0;
+for (const r of records) {
+  const imaged = hasImage(r);
+  if (imaged) {
+    imageTotal += 1;
+    if (workSlugById.get(r.id)) imageMapped += 1;
+  }
+  bumpUnmapped("era", r.era, imaged);
+  bumpUnmapped("project", r.project, imaged);
+}
+
+const unmappedRows = [...unmappedMap.values()].sort(
+  (a, b) => b.images - a.images || b.total - a.total || a.value.localeCompare(b.value),
+);
+const coveragePct = imageTotal ? (100 * imageMapped) / imageTotal : 0;
+
+const unmappedLines = [
+  `# Unmapped era / project strings`,
+  `# Image records with work_slug: ${imageMapped} / ${imageTotal} (${coveragePct.toFixed(1)}%)`,
+  `# Sorted by image count, then total. Category labels in do_not_map are listed here but were not assigned.`,
+  `# field\timages\ttotal\tvalue`,
+  ...unmappedRows.map((r) => `${r.field}\t${r.images}\t${r.total}\t${r.value}`),
+  "",
+];
+writeFileSync(join(root, "data/unmapped-eras.txt"), unmappedLines.join("\n"));
+
+/* -------------------------------------------------------------------------- */
+/* People                                                                      */
+/* -------------------------------------------------------------------------- */
 
 type Person = {
   slug: string;
@@ -173,6 +360,10 @@ writeFileSync(
   ),
 );
 
+/* -------------------------------------------------------------------------- */
+/* Legacy public/index (current pages)                                         */
+/* -------------------------------------------------------------------------- */
+
 const years: Record<string, { count: number; domains: Record<string, number>; with_image: number }> = {};
 const domains: Record<string, { count: number; types: Record<string, number>; with_image: number }> = {};
 const projects: Record<string, { count: number; domains: Record<string, number>; years: Record<string, number> }> = {};
@@ -207,39 +398,104 @@ for (const r of records) {
   }
 }
 
-const WORK_DEFS = [
-  { slug: "yeezus", label: "Yeezus", project: ["Yeezus", "Yeezus 2"], era: ["Yeezus"] },
-  { slug: "808s-heartbreak", label: "808s & Heartbreak", project: ["808s & Heartbreak"], era: ["808s & Heartbreak"] },
-  { slug: "the-college-dropout", label: "The College Dropout", project: ["The College Dropout", "Before The College Dropout"], era: ["The College Dropout", "Before The College Dropout"] },
-  { slug: "late-registration", label: "Late Registration", project: ["Late Registration"], era: ["Late Registration"] },
-  { slug: "graduation", label: "Graduation", project: ["Graduation"], era: ["Graduation"] },
-  { slug: "donda", label: "Donda", project: ["DONDA 2 [V1]", "DONDA [V1]", "Donda [V3]", "Donda [V2]", "Donda"], era: ["Donda", "DONDA"] },
-  { slug: "the-life-of-pablo", label: "The Life Of Pablo", project: ["The Life Of Pablo"], era: ["The Life Of Pablo"] },
-  { slug: "jesus-is-king", label: "Jesus Is King", project: ["JESUS IS KING", "Jesus Is King"], era: ["Jesus Is King"] },
-  { slug: "yeezy-season", label: "Yeezy Season", project: ["Yeezy Season"], era: ["Yeezy Season"] },
-  { slug: "yzy-gap", label: "YZY GAP", project: ["YZY GAP", "YZY GAP Engineered by Balenciaga"], era: ["YZY GAP"] },
-  { slug: "vultures", label: "Vultures", project: ["VULTURES 1", "VULTURES 2", "Vultures"], era: ["Vultures"] },
-  { slug: "glow-in-the-dark", label: "Glow In The Dark", titleIncludes: ["Glow In The Dark", "Glow in the Dark"] },
-] as const;
+type WorkAgg = {
+  def: WorkDef;
+  count: number;
+  image_count: number;
+  domains: Record<string, number>;
+  years: Record<string, number>;
+  sources: Record<string, number>;
+  ids: string[];
+  image_ids: string[];
+};
 
-const works = WORK_DEFS.map((w) => {
-  let count = 0;
-  const domainCounts: Record<string, number> = {};
-  const yearCounts: Record<string, number> = {};
-  for (const r of records) {
-    const hit =
-      ("project" in w && w.project?.includes(r.project ?? "")) ||
-      ("era" in w && w.era?.includes(r.era ?? "")) ||
-      ("titleIncludes" in w &&
-        w.titleIncludes?.some((t) => (r.title ?? "").includes(t)));
-    if (!hit) continue;
-    count += 1;
-    domainCounts[r.domain] = (domainCounts[r.domain] ?? 0) + 1;
-    const y = yearOf(r);
-    if (y) yearCounts[y] = (yearCounts[y] ?? 0) + 1;
+const workAggs = new Map<string, WorkAgg>();
+for (const def of aliasFile.works) {
+  workAggs.set(def.slug, {
+    def,
+    count: 0,
+    image_count: 0,
+    domains: {},
+    years: {},
+    sources: {},
+    ids: [],
+    image_ids: [],
+  });
+}
+
+for (const r of records) {
+  const slug = workSlugById.get(r.id);
+  if (!slug) continue;
+  const agg = workAggs.get(slug);
+  if (!agg) continue;
+  agg.count += 1;
+  agg.ids.push(r.id);
+  agg.domains[r.domain] = (agg.domains[r.domain] ?? 0) + 1;
+  const src = r.source?.name ?? "?";
+  agg.sources[src] = (agg.sources[src] ?? 0) + 1;
+  const y = yearOf(r);
+  if (y) agg.years[y] = (agg.years[y] ?? 0) + 1;
+  if (hasImage(r)) {
+    agg.image_count += 1;
+    agg.image_ids.push(r.id);
   }
-  return { ...w, count, domains: domainCounts, years: yearCounts };
-}).filter((w) => w.count > 0);
+}
+
+const recordById = new Map(records.map((r) => [r.id, r]));
+
+function pickCoversFast(ids: string[], max = 12): string[] {
+  const byMedium = new Map<string, string[]>();
+  for (const id of ids) {
+    const r = recordById.get(id);
+    if (!r) continue;
+    const list = byMedium.get(r.domain) ?? [];
+    list.push(id);
+    byMedium.set(r.domain, list);
+  }
+  const queues = [...byMedium.values()];
+  const out: string[] = [];
+  let i = 0;
+  while (out.length < max) {
+    let added = false;
+    for (const q of queues) {
+      if (q[i]) {
+        out.push(q[i]);
+        added = true;
+        if (out.length >= max) break;
+      }
+    }
+    if (!added) break;
+    i += 1;
+  }
+  if (out.length < 4) return ids.slice(0, Math.min(ids.length, max));
+  return out.slice(0, Math.min(Math.max(out.length, 4), max));
+}
+
+const worksIndex = aliasFile.works
+  .map((def) => {
+    const agg = workAggs.get(def.slug)!;
+    const covers = def.cover_ids?.length ? def.cover_ids : pickCoversFast(agg.image_ids);
+    return {
+      slug: def.slug,
+      label: def.name,
+      name: def.name,
+      years: def.years,
+      kind: def.kind,
+      parent: def.parent ?? null,
+      aliases: def.aliases,
+      titleIncludes: def.title_includes ?? [],
+      project: def.aliases,
+      era: def.aliases,
+      count: agg.count,
+      image_count: agg.image_count,
+      domains: agg.domains,
+      years_hist: agg.years,
+      sources: agg.sources,
+      covers,
+      threads: [] as string[],
+    };
+  })
+  .filter((w) => w.count > 0);
 
 const publicIndex = join(root, "public/index");
 mkdirSync(publicIndex, { recursive: true });
@@ -270,7 +526,19 @@ writeFileSync(
 writeFileSync(
   join(publicIndex, "projects.json"),
   JSON.stringify({
-    works,
+    works: worksIndex.map((w) => ({
+      slug: w.slug,
+      label: w.label,
+      name: w.name,
+      kind: w.kind,
+      parent: w.parent,
+      project: w.project,
+      era: w.era,
+      titleIncludes: w.titleIncludes,
+      count: w.count,
+      domains: w.domains,
+      years: w.years_hist,
+    })),
     projects: Object.entries(projects)
       .filter(([, v]) => v.count >= 20)
       .sort((a, b) => b[1].count - a[1].count)
@@ -329,12 +597,29 @@ const slim = records.map((r) => ({
   img: firstImg(r),
   desc: (r.description ?? "").slice(0, 220),
   confidence: r.confidence,
+  work_slug: workSlugById.get(r.id) ?? null,
 }));
 writeFileSync(join(root, "public/search-index.json"), JSON.stringify(slim));
+
+/* -------------------------------------------------------------------------- */
+/* Shards + new idx                                                            */
+/* -------------------------------------------------------------------------- */
+
+function imageMeta(img: ImageRow | null) {
+  if (!img) return { hash: null as string | null, fit: undefined as "contain" | "cover" | undefined, bg: undefined as string | undefined };
+  const hash = img.sha256 ?? null;
+  const deriv = hash ? derivByHash[hash] : undefined;
+  return {
+    hash,
+    fit: deriv?.fit,
+    bg: deriv?.bg,
+  };
+}
 
 const shards = new Map<string, object[]>();
 for (const r of records) {
   const key = shardKey(r.id);
+  const locals = rankedLocals(r);
   const row = {
     id: r.id,
     title: r.title,
@@ -356,7 +641,10 @@ for (const r of records) {
     source: r.source,
     source_claims: (r.source_claims ?? []).filter((c) => c.field !== "headers"),
     confidence: r.confidence,
-    images: rankedLocals(r).map((i) => ({
+    work_slug: workSlugById.get(r.id) ?? null,
+    images: locals.map((i) => {
+      const meta = imageMeta(i);
+      return {
         local_path: publicUrl(i.local_path),
         original_url: i.original_url,
         source_page: i.source_page,
@@ -365,7 +653,11 @@ for (const r of records) {
         editorial_role: roleFor(r.id, i.original_url)?.editorial_role ?? i.role,
         width: i.width,
         height: i.height,
-      })),
+        hash: meta.hash,
+        ...(meta.fit ? { fit: meta.fit } : {}),
+        ...(meta.bg ? { bg: meta.bg } : {}),
+      };
+    }),
   };
   const list = shards.get(key) ?? [];
   list.push(row);
@@ -379,14 +671,181 @@ for (const [key, list] of shards) {
   writeFileSync(join(recDir, `${key}.json`), JSON.stringify(list));
 }
 
-console.log(
+/* Slim visual / text / works indexes */
+type VisualRow = {
+  id: string;
+  t: string;
+  y: string | null;
+  m: string;
+  ty: string;
+  w: string | null;
+  s: string;
+  src: string | null;
+  i: string | null;
+  f?: "contain" | "cover";
+  bg?: string;
+};
+
+const visual: VisualRow[] = [];
+const textByDecade = new Map<string, object[]>();
+
+for (const r of records) {
+  const y = yearOf(r);
+  const img = firstLocal(r);
+  const meta = imageMeta(img);
+  const imgUrlPath = firstImg(r);
+  const base = {
+    id: r.id,
+    t: r.title,
+    y,
+    m: mediumOf(r.domain),
+    ty: r.type,
+    w: workSlugById.get(r.id) ?? null,
+    s: r.status,
+    src: r.source?.name ?? null,
+  };
+  if (imgUrlPath) {
+    const row: VisualRow = { ...base, i: imgUrlPath };
+    if (meta.fit) row.f = meta.fit;
+    if (meta.bg) row.bg = meta.bg;
+    visual.push(row);
+  }
+  const decade = decadeOf(y);
+  const textRow: Record<string, unknown> = { ...base };
+  if (imgUrlPath) textRow.i = imgUrlPath;
+  const list = textByDecade.get(decade) ?? [];
+  list.push(textRow);
+  textByDecade.set(decade, list);
+}
+
+visual.sort((a, b) => (b.y ?? "").localeCompare(a.y ?? "") || a.t.localeCompare(b.t));
+
+const idxDir = join(root, "public/idx");
+const idxWorkDir = join(idxDir, "work");
+const idxTextDir = join(idxDir, "text");
+rmSync(idxDir, { recursive: true, force: true });
+mkdirSync(idxWorkDir, { recursive: true });
+mkdirSync(idxTextDir, { recursive: true });
+
+const visualJson = JSON.stringify(visual);
+writeFileSync(join(idxDir, "visual.json"), visualJson);
+const visualGz = gzipSync(Buffer.from(visualJson)).length;
+
+writeFileSync(
+  join(idxDir, "works.json"),
   JSON.stringify({
-    people: people.length,
-    years: Object.keys(years).length,
-    domains: Object.keys(domains).length,
-    works: works.map((w) => [w.slug, w.count]),
-    projects_indexed: Object.keys(projects).filter((k) => projects[k].count >= 20).length,
-    search_bytes: JSON.stringify(slim).length,
-    shards: shards.size,
+    works: worksIndex.map((w) => ({
+      slug: w.slug,
+      name: w.name,
+      years: w.years,
+      kind: w.kind,
+      parent: w.parent,
+      count: w.count,
+      image_count: w.image_count,
+      domains: w.domains,
+      covers: w.covers,
+      threads: w.threads,
+    })),
   }),
 );
+
+for (const w of worksIndex) {
+  const agg = workAggs.get(w.slug)!;
+  const children = aliasFile.works.filter((d) => d.parent === w.slug).map((d) => d.slug);
+  writeFileSync(
+    join(idxWorkDir, `${w.slug}.json`),
+    JSON.stringify({
+      slug: w.slug,
+      name: w.name,
+      years: w.years,
+      kind: w.kind,
+      parent: w.parent,
+      children,
+      count: w.count,
+      image_count: w.image_count,
+      domains: w.domains,
+      sources: w.sources,
+      covers: w.covers,
+      threads: w.threads,
+      ids: agg.ids,
+    }),
+  );
+}
+
+for (const [decade, rows] of textByDecade) {
+  writeFileSync(join(idxTextDir, `${decade}.json`), JSON.stringify(rows));
+}
+
+writeFileSync(
+  join(idxDir, "people.json"),
+  JSON.stringify({
+    people: people.map((p) => ({
+      slug: p.slug,
+      display_name: p.display_name,
+      record_count: p.record_count,
+      domains: p.domains,
+      years: p.years,
+      record_ids: p.record_ids,
+    })),
+  }),
+);
+
+const RELEASED = new Set(["RELEASED", "REALIZED", "FULL"]);
+const UNREALIZED = new Set([
+  "UNRELEASED",
+  "PROTOTYPE",
+  "SAMPLE",
+  "CONCEPT",
+  "CANCELLED",
+  "LOST",
+  "NEVER RECORDED",
+  "PARTIAL",
+]);
+const UNCONFIRMED = new Set(["UNCONFIRMED", "RUMORED", "CONFLICTING SOURCES"]);
+const otherStatuses = Object.keys(statuses).filter(
+  (s) => !RELEASED.has(s) && !UNREALIZED.has(s) && !UNCONFIRMED.has(s),
+);
+
+const gapWork = workAggs.get("yzy-gap-balenciaga");
+const gapSources = Object.keys(gapWork?.sources ?? {}).length;
+
+console.log(
+  JSON.stringify(
+    {
+      people: people.length,
+      years: Object.keys(years).length,
+      domains: Object.keys(domains).length,
+      works: worksIndex.map((w) => [w.slug, w.count, w.image_count]),
+      projects_indexed: Object.keys(projects).filter((k) => projects[k].count >= 20).length,
+      search_bytes: JSON.stringify(slim).length,
+      shards: shards.size,
+      image_records: imageTotal,
+      image_mapped: imageMapped,
+      image_coverage_pct: Number(coveragePct.toFixed(2)),
+      unmapped_strings: unmappedRows.length,
+      visual_bytes: visualJson.length,
+      visual_gz: visualGz,
+      yzy_gap_balenciaga_sources: gapWork?.sources ?? {},
+      yzy_gap_balenciaga_source_count: gapSources,
+      other_statuses: otherStatuses,
+      idx_works: worksIndex.length,
+      text_decades: [...textByDecade.keys()].sort(),
+      derivatives_loaded: Object.keys(derivByHash).length,
+    },
+    null,
+    2,
+  ),
+);
+
+if (coveragePct < 90) {
+  console.warn(
+    `WARNING: image work_slug coverage ${coveragePct.toFixed(1)}% is under the 90% Phase 1 bar`,
+  );
+}
+if (visualGz > 400 * 1024) {
+  console.warn(`WARNING: visual.json gzip ${visualGz} exceeds 400KB`);
+}
+if (gapSources < 2) {
+  console.warn(`WARNING: yzy-gap-balenciaga image records span ${gapSources} source(s); need ≥2`);
+}
+
