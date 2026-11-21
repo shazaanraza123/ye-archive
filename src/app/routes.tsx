@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { ArchiveShell } from "./ArchiveShell";
-import { Entry } from "./pages/Entry";
+import { Home } from "./pages/Home";
+import { BoardPage } from "./pages/Board";
+import { ThreadPage } from "./pages/Thread";
 import { ArchiveField } from "./pages/ArchiveField";
 import { EraYeezus } from "./pages/EraYeezus";
 import { RecordPage } from "./pages/Record";
@@ -26,7 +28,9 @@ export const router = createBrowserRouter([
     path: "/",
     Component: ArchiveShell,
     children: [
-      { index: true, Component: Entry },
+      { index: true, Component: Home },
+      { path: "board", Component: BoardPage },
+      { path: "thread/:slug", Component: ThreadPage },
       { path: "archive", Component: ArchiveField },
       { path: "era/yeezus", Component: EraYeezus },
       { path: "record", element: <Navigate to="/record/yetracker-3b678731de5e1b3a" replace /> },

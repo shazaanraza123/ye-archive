@@ -3,60 +3,39 @@ import { Link, useParams } from "react-router";
 import {
   GLOW_ID,
   dash,
-  figmaScreen,
+  displayDate,
   loadRecord,
   loadSearchIndex,
-  localSrc,
+  loadVisualIndex,
+  loadWorksIndex,
   slugify,
+  statusKind,
   type PackedRecord,
   type SearchHit,
+  type VisualRow,
+  type WorkSummary,
 } from "@/lib/archive";
-import { LazyImg } from "../components/LazyImg";
-import { Provenance } from "../components/Meta";
-
-const SUGGEST_CAP = 8;
-
-const ROLE_RANK: Record<string, number> = {
-  product: 100,
-  "on-body": 90,
-  front: 80,
-  back: 70,
-  detail: 60,
-  label: 55,
-  construction: 50,
-  runway: 40,
-  prototype: 35,
-  sketch: 20,
-  render: 15,
-  reference: 10,
-  primary: 6,
-  unknown: 5,
-};
-
-function rankOf(role?: string | null) {
-  return ROLE_RANK[role ?? ""] ?? 5;
-}
-
-function fashionLabel(role?: string | null) {
-  if (role === "front") return "FRONT";
-  if (role === "back") return "BACK";
-  if (role === "on-body") return "ON BODY";
-  if (role === "detail" || role === "label" || role === "construction") return "DETAIL";
-  if (role === "sketch" || role === "render" || role === "reference") return "REFERENCE/SKETCH";
-  return null;
-}
+import { imgUrl } from "@/lib/img";
+import { relatedGroups, type RelatedGroup } from "@/lib/related";
+import { useBoard } from "../board-context";
+import { Tile } from "../components/Tile";
 
 export function RecordPage() {
   const { id = GLOW_ID } = useParams();
+  const board = useBoard();
   const [found, setFound] = useState<PackedRecord | null>(null);
   const [missing, setMissing] = useState(false);
   const [index, setIndex] = useState<SearchHit[] | null>(null);
+  const [visual, setVisual] = useState<VisualRow[] | null>(null);
+  const [works, setWorks] = useState<WorkSummary[] | null>(null);
   const [view, setView] = useState(0);
+  const [zoom, setZoom] = useState(false);
 
   useEffect(() => {
     setFound(null);
     setMissing(false);
     setView(0);
+    setZoom(false);
     let alive = true;
     loadRecord(id).then((row) => {
       if (!alive) return;
@@ -73,70 +52,30 @@ export function RecordPage() {
     loadSearchIndex().then((rows) => {
       if (alive) setIndex(rows);
     });
+    loadVisualIndex().then((rows) => {
+      if (alive) setVisual(rows);
+    });
+    loadWorksIndex().then((rows) => {
+      if (alive) setWorks(rows);
+    });
     return () => {
       alive = false;
     };
   }, []);
 
-  const isGlowMaster = id === GLOW_ID;
-  const figma = isGlowMaster ? figmaScreen("04-record-glow-in-the-dark") : [];
-  const fashionStudy = !isGlowMaster && (found?.domain === "FASHION" || found?.domain === "OBJECTS");
-
-  const ranked = useMemo(() => {
+  const images = useMemo(() => {
     if (!found) return [];
-    return found.images
-      .filter((img) => img.local_path)
-      .slice()
-      .sort((a, b) => {
-        const ra = rankOf(a.editorial_role ?? a.role);
-        const rb = rankOf(b.editorial_role ?? b.role);
-        if (rb !== ra) return rb - ra;
-        return (b.width ?? 0) - (a.width ?? 0);
-      });
+    return found.images.filter((img) => img.local_path);
   }, [found]);
 
-  const archiveImages = ranked
-    .map((img) => localSrc(img.local_path))
-    .filter((src): src is string => Boolean(src));
-
-  const images = isGlowMaster
-    ? figma.map((f) => f.src).filter(Boolean)
-    : archiveImages;
-
-  const current = images[view] ?? images[0] ?? null;
-  const currentMeta = ranked[view] ?? ranked[0];
-
-  const documented = useMemo(() => {
-    if (!found || !index) return [];
-    return found.related_records
-      .map((rid) => index.find((h) => h.id === rid))
-      .filter((h): h is SearchHit => Boolean(h));
-  }, [found, index]);
-
-  const suggested = useMemo(() => {
-    if (!found || !index) return [];
-    const related = new Set(found.related_records);
-    const pool = index.filter((h) => {
-      if (h.id === found.id || related.has(h.id)) return false;
-      if (found.project && h.project === found.project) return true;
-      if (found.era && h.era === found.era && found.project && h.project === found.project) {
-        return true;
-      }
-      if (found.era && h.era === found.era) return true;
-      if (!found.people.length) return false;
-      const theirs = new Set(
-        [...(h.names ?? []), ...(h.people ?? [])].map((n) => n.toLowerCase()),
-      );
-      return found.people.some((p) => theirs.has(p.toLowerCase()));
-    });
-    const withImg = pool.filter((h) => h.img);
-    const rest = pool.filter((h) => !h.img);
-    return [...withImg, ...rest].slice(0, SUGGEST_CAP);
-  }, [found, index]);
+  const related: RelatedGroup[] = useMemo(() => {
+    if (!found || !visual) return [];
+    return relatedGroups(found, visual, index);
+  }, [found, visual, index]);
 
   if (missing) {
     return (
-      <main className="ye-page fade-in">
+      <main className="ye-page">
         <p className="meta">Record not in the local archive.</p>
       </main>
     );
@@ -144,100 +83,78 @@ export function RecordPage() {
 
   if (!found) {
     return (
-      <main className="ye-page fade-in">
+      <main className="ye-page">
         <p className="meta">Loading record…</p>
       </main>
     );
   }
 
+  const current = images[view] ?? images[0];
+  const src = current
+    ? imgUrl(current.hash ?? "", 1200, current.local_path)
+    : null;
+  const unconfirmed = statusKind(found.status) === "unconfirmed";
+  const saved = board.has(found.id);
   const people = found.people.filter(Boolean);
-  const orgs = found.organizations.filter(Boolean);
-  const refs = found.references.filter(Boolean);
-  const claims = found.source_claims.filter((c) => c.field !== "headers");
+  const workDef = found.work_slug ? works?.find((w) => w.slug === found.work_slug) : undefined;
+  const workHref = found.work_slug
+    ? `/work/${found.work_slug}`
+    : found.project
+      ? `/work/${slugify(found.project)}`
+      : null;
+  const workLabel = workDef?.name ?? found.work_slug ?? found.project;
+  const shownDate = displayDate(found.date, found.year);
 
   return (
-    <main className="record fade-in">
-      <div className="record__media">
-        {current ? <LazyImg src={current} alt={found.title} loading="eager" /> : <div className="record__void" />}
-        {currentMeta && !isGlowMaster ? (
-          <div className="meta" style={{ marginTop: 12 }}>
-            {fashionStudy && fashionLabel(currentMeta.editorial_role)
-              ? fashionLabel(currentMeta.editorial_role)
-              : null}
-            {fashionStudy && fashionLabel(currentMeta.editorial_role) ? " · " : null}
-            {currentMeta.caption ? currentMeta.caption : `${ranked.length} source stills`}
+    <main key={found.id} className={`record-v2${zoom ? " is-zoom" : ""}`}>
+      <div className="record-v2__media">
+        {src ? (
+          <button type="button" className="record-v2__frame" onClick={() => setZoom((z) => !z)} aria-label="Zoom image">
+            <img src={src} alt={[found.title, found.year, found.domain].filter(Boolean).join(" · ")} />
+          </button>
+        ) : (
+          <div className="record-v2__text" aria-hidden="true">
+            {found.title}
           </div>
-        ) : null}
-        {isGlowMaster ? (
-          <div className="meta" style={{ marginTop: 12 }}>
-            Glow in the Dark — master composition
-          </div>
-        ) : null}
-        {!isGlowMaster && ranked.length > 1 ? (
-          <div className={fashionStudy ? "record__study" : "record__viewer"}>
-            {ranked.map((img, i) => {
-              const src = localSrc(img.local_path);
-              if (!src) return null;
-              const label = fashionStudy ? fashionLabel(img.editorial_role) : null;
+        )}
+        {images.length > 1 ? (
+          <div className="record-v2__strip" aria-label="More images">
+            {images.map((img, i) => {
+              const thumb = imgUrl(img.hash ?? "", 400, img.local_path);
               return (
                 <button
                   key={`${img.original_url}-${i}`}
                   type="button"
                   className={i === view ? "is-on" : ""}
-                  onClick={() => setView(i)}
+                  onClick={() => {
+                    setView(i);
+                    setZoom(false);
+                  }}
                 >
-                  <LazyImg src={src} alt="" loading="eager" />
-                  <span className="meta">
-                    {label ?? (fashionStudy ? "" : String(i + 1).padStart(2, "0"))}
-                  </span>
+                  <img src={thumb} alt="" />
                 </button>
               );
             })}
           </div>
-        ) : isGlowMaster && images.length > 1 ? (
-          <div className="record__viewer">
-            {images.map((src, i) => (
-              <button
-                key={`${src}-${i}`}
-                type="button"
-                className={i === view ? "is-on" : ""}
-                onClick={() => setView(i)}
-              >
-                <LazyImg src={src} alt="" />
-                <span className="meta">{String(i + 1).padStart(2, "0")}</span>
-              </button>
-            ))}
-          </div>
         ) : null}
       </div>
-      <aside>
-        <h1 className="record__title">{found.title}</h1>
-        <Provenance
-          source={found.source.name}
-          url={found.source.url}
-          date={found.date ?? found.year}
-          status={found.status}
-          statusTerm={found.status_source_term}
-        />
-        {found.description ? (
-          <p style={{ marginTop: 28, fontSize: 16, lineHeight: 1.4, maxWidth: "36em" }}>
-            {found.description}
-          </p>
-        ) : null}
+      <aside className="record-v2__meta">
+        <p className="meta">
+          {found.domain}
+          {found.type ? ` · ${found.type}` : ""}
+          {unconfirmed ? ` · ${found.status}` : ""}
+        </p>
+        <h1 className="record-v2__title">{found.title}</h1>
+        <div className="record-v2__actions">
+          <button type="button" className="record-v2__save" onClick={() => board.toggle(found.id)}>
+            {saved ? "Saved" : "Save"}
+          </button>
+        </div>
         <dl className="record__meta">
-          {found.type ? (
-            <>
-              <dt className="record__k">Type</dt>
-              <dd className="record__v">
-                {found.type}
-                {found.subtype ? ` / ${found.subtype}` : ""}
-              </dd>
-            </>
-          ) : null}
-          {found.date || found.year ? (
+          {shownDate && shownDate !== found.year ? (
             <>
               <dt className="record__k">Date</dt>
-              <dd className="record__v">{dash(found.date ?? found.year)}</dd>
+              <dd className="record__v">{dash(shownDate)}</dd>
             </>
           ) : null}
           {found.year ? (
@@ -248,17 +165,11 @@ export function RecordPage() {
               </dd>
             </>
           ) : null}
-          {found.era ? (
+          {workHref ? (
             <>
-              <dt className="record__k">Era</dt>
-              <dd className="record__v">{found.era}</dd>
-            </>
-          ) : null}
-          {found.project ? (
-            <>
-              <dt className="record__k">Project</dt>
+              <dt className="record__k">Work</dt>
               <dd className="record__v">
-                <Link to={`/work/${slugify(found.project)}`}>{found.project}</Link>
+                <Link to={workHref}>{workLabel}</Link>
               </dd>
             </>
           ) : null}
@@ -267,6 +178,7 @@ export function RecordPage() {
               <dt className="record__k">Medium</dt>
               <dd className="record__v">
                 <Link to={`/medium/${found.domain.toLowerCase()}`}>{found.domain}</Link>
+                {found.type ? ` / ${found.type}` : ""}
               </dd>
             </>
           ) : null}
@@ -275,7 +187,7 @@ export function RecordPage() {
               <dt className="record__k">Status</dt>
               <dd className="record__v">
                 {found.status}
-                {found.status_source_term ? ` · source term: ${found.status_source_term}` : ""}
+                {found.status_source_term ? ` · ${found.status_source_term}` : ""}
               </dd>
             </>
           ) : null}
@@ -295,12 +207,6 @@ export function RecordPage() {
               </dd>
             </>
           ) : null}
-          {orgs.length ? (
-            <>
-              <dt className="record__k">Organizations</dt>
-              <dd className="record__v">{orgs.join(" · ")}</dd>
-            </>
-          ) : null}
           {found.source.name ? (
             <>
               <dt className="record__k">Source</dt>
@@ -315,104 +221,41 @@ export function RecordPage() {
               </dd>
             </>
           ) : null}
-          {documented.length ? (
+          {found.description ? (
             <>
-              <dt className="record__k">Related</dt>
-              <dd className="record__v">
-                <div className="meta meta-ink" style={{ marginBottom: 8 }}>
-                  Documented — related_records
-                </div>
-                {documented.map((h) => (
-                  <div key={h.id}>
-                    <Link to={`/record/${h.id}`}>{h.title}</Link>
-                  </div>
-                ))}
-              </dd>
-            </>
-          ) : null}
-          {found.related_unresolved ? (
-            <>
-              <dt className="record__k">Unresolved</dt>
-              <dd className="record__v">
-                {found.related_unresolved} source identifiers do not resolve in this archive
-              </dd>
-            </>
-          ) : null}
-          {suggested.length ? (
-            <>
-              <dt className="record__k">Suggested</dt>
-              <dd className="record__v">
-                <div className="meta" style={{ marginBottom: 8 }}>
-                  Algorithmic — shared project, era, or person. Not a documented link. Shared
-                  year is not treated as fact.
-                </div>
-                {suggested.map((h) => (
-                  <div key={h.id}>
-                    <Link to={`/record/${h.id}`}>{h.title}</Link>
-                  </div>
-                ))}
-              </dd>
-            </>
-          ) : null}
-          {refs.length ? (
-            <>
-              <dt className="record__k">References</dt>
-              <dd className="record__v">
-                {refs.map((r) => (
-                  <div key={r}>
-                    <a href={r} target="_blank" rel="noreferrer">
-                      {r}
-                    </a>
-                  </div>
-                ))}
-              </dd>
+              <dt className="record__k">Note</dt>
+              <dd className="record__v">{found.description}</dd>
             </>
           ) : null}
         </dl>
-        {claims.length ? (
-          <div className="record__claims">
-            <div className="meta meta-ink">Source claims — not silently merged</div>
-            {claims.map((c, i) => (
-              <div key={`${c.field}-${i}`} className="meta" style={{ marginTop: 8 }}>
-                {c.field}: {c.value} · {c.source_name} ·{" "}
-                <a href={c.source_url} target="_blank" rel="noreferrer">
-                  URL
-                </a>
-              </div>
-            ))}
-          </div>
-        ) : null}
       </aside>
-      {isGlowMaster && figma.length > 1 ? (
-        <div className="record__more">
-          {figma.slice(1).map((item) => (
-            <Link key={item.file} to={`/record/${item.record_id}`}>
-              <LazyImg src={item.src} alt={item.record_title} />
-              <div className="meta" style={{ marginTop: 8 }}>
-                {item.record_title}
-                <br />
-                {item.source_name}
+      <div className="record-v2__related">
+        {related.map((group) =>
+          group.rows.length ? (
+            <section key={group.key} className="related">
+              <h2 className="meta meta-ink">{group.label}</h2>
+              <div className="related__row">
+                {group.rows.map((row) => (
+                  <Tile
+                    key={row.id}
+                    tile={{
+                      id: row.id,
+                      t: row.t,
+                      y: row.y,
+                      m: row.m,
+                      i: row.i,
+                      src: row.src,
+                      w: row.w,
+                      f: "contain",
+                    }}
+                    labeled
+                  />
+                ))}
               </div>
-            </Link>
-          ))}
-        </div>
-      ) : documented.length ? (
-        <div className="record__more">
-          {documented
-            .filter((h) => h.img)
-            .slice(0, 6)
-            .map((h) => (
-              <Link key={h.id} to={`/record/${h.id}`}>
-                <LazyImg src={h.img} alt={h.title} />
-                <div className="meta" style={{ marginTop: 8 }}>
-                  {h.title}
-                  <br />
-                  documented relation
-                </div>
-              </Link>
-            ))}
-        </div>
-      ) : null}
+            </section>
+          ) : null,
+        )}
+      </div>
     </main>
   );
 }

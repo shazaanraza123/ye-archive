@@ -296,6 +296,55 @@ export function loadJson<T>(url: string): Promise<T> {
   });
 }
 
+export type VisualRow = {
+  id: string;
+  t: string;
+  y: string | null;
+  m: string;
+  ty?: string;
+  w: string | null;
+  s?: string;
+  src?: string | null;
+  i: string | null;
+  f?: "contain" | "cover";
+  bg?: string;
+};
+
+let visualPromise: Promise<VisualRow[]> | null = null;
+
+export function loadVisualIndex(): Promise<VisualRow[]> {
+  if (!visualPromise) {
+    visualPromise = fetch("/idx/visual.json").then((res) => {
+      if (!res.ok) throw new Error("visual index missing");
+      return res.json();
+    });
+  }
+  return visualPromise;
+}
+
+export type WorkSummary = { slug: string; name: string; years: [string, string] };
+
+let worksPromise: Promise<WorkSummary[]> | null = null;
+
+export function loadWorksIndex(): Promise<WorkSummary[]> {
+  if (!worksPromise) {
+    worksPromise = fetch("/idx/works.json")
+      .then((res) => {
+        if (!res.ok) throw new Error("works index missing");
+        return res.json();
+      })
+      .then((data: { works: WorkSummary[] }) => data.works);
+  }
+  return worksPromise;
+}
+
+export function displayDate(date: string | null | undefined, year: string | null | undefined): string | null {
+  const d = (date ?? "").trim();
+  if (/^\d{4}(-\d{2}(-\d{2})?)?$/.test(d)) return d;
+  const y = (year ?? "").trim();
+  return y || null;
+}
+
 export function matchHit(hit: SearchHit, q: string): boolean {
   const needle = q.trim().toLowerCase();
   if (!needle) return false;
@@ -368,13 +417,14 @@ export function sortHits(rows: SearchHit[], sort: "chrono" | "reverse" | "title"
 }
 
 export const NAV = [
-  { label: "Time", to: "/time" },
-  { label: "Medium", to: "/medium" },
+  { label: "Archive", to: "/archive" },
   { label: "Work", to: "/work" },
-  { label: "People", to: "/people" },
-  { label: "Search", to: "/search" },
+  { label: "Board", to: "/board" },
+] as const;
+
+export const NAV_SHORTCUTS = [
+  { label: "Medium", to: "/medium" },
   { label: "Unrealized", to: "/unrealized" },
-  { label: "Connections", to: "/connections" },
 ] as const;
 
 export const PAGE_SIZE = 40;
