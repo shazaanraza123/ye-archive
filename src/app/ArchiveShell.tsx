@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
+import { BoardProvider } from "./board-context";
 import { ArchiveNav } from "./components/ArchiveNav";
 import { SearchOverlay } from "./components/SearchOverlay";
 
@@ -29,10 +30,12 @@ export function ArchiveShell() {
   }, [nav, searchOpen]);
 
   return (
-    <div className="ye">
-      <ArchiveNav />
-      <Outlet />
-      {searchOpen ? <SearchOverlay /> : null}
-    </div>
+    <BoardProvider>
+      <div className="ye">
+        <ArchiveNav />
+        <Outlet />
+        {searchOpen ? <SearchOverlay /> : null}
+      </div>
+    </BoardProvider>
   );
 }

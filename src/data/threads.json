@@ -1,0 +1,48 @@
+{
+  "threads": [
+    {
+      "slug": "glow-in-the-dark",
+      "name": "Glow in the Dark",
+      "number": 1,
+      "intro": "The 2008 tour as one idea: stage drawing, merch, film, and the live cuts. Links here are curator choices.",
+      "ids": [
+        "yetracker-3b678731de5e1b3a",
+        "yeezyarchive-bffe93154f660f90",
+        "parisaint-e081acd00558d168",
+        "yetracker-92451a9715c1afe0",
+        "yetracker-24ed964767b656f2",
+        "yetracker-18aae84a09fc5f12",
+        "yeezyarchive-10ab1fb5111e50fb",
+        "parisaint-c63205a85195a965"
+      ]
+    },
+    {
+      "slug": "yeezus",
+      "name": "Yeezus",
+      "number": 2,
+      "intro": "The album, the tee, the magazine, the cover. Same work, four mediums.",
+      "ids": [
+        "yetracker-672fe9e5188f8fd4",
+        "parisaint-adc41ed92561ebbd",
+        "yetracker-f73bd06a80d43c9a",
+        "parisaint-15de5455f25615be",
+        "parisaint-4ffc1534671fb67f",
+        "yetracker-c1a387e3b38e0230"
+      ]
+    },
+    {
+      "slug": "ye-tour-2026",
+      "name": "Ye Tour 2026",
+      "number": 3,
+      "intro": "The current tour as stills: stadiums, films, and the music beds under them.",
+      "ids": [
+        "yetour-d2dfedf045d6a24f",
+        "yetour-bf5cd073ad9f8ef2",
+        "yetour-0a4716ad97a34522",
+        "yetour-4dcb6b0e6b42d801",
+        "yetour-c2e666438abf60e4",
+        "yetour-b13ba1db545fb9c0"
+      ]
+    }
+  ]
+}

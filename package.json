@@ -4,8 +4,10 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "prebuild": "tsx scripts/validate-home.ts",
     "build": "vite build",
     "dev": "vite",
+    "validate:home": "tsx scripts/validate-home.ts",
     "archive": "tsx scripts/scrape.ts",
     "scrape": "tsx scripts/scrape.ts",
     "index": "tsx scripts/build-indexes.ts",
